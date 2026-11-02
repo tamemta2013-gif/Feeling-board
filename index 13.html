@@ -1,0 +1,493 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}</style>
+<title>لوحة المشاعر</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+Bhaijaan+2:wght@500;700;800&family=Tajawal:wght@400;500;700&display=swap">
+<style>
+/* Layout: a toy-like 3D board. Chunky extruded title, a glossy stage with a big tilting face, then raised push-button tiles on a floor of drifting orbs. */
+:root{
+  --bg:#EAF4F1;
+  --surface:#FFFFFF;
+  --ink:#17383A;
+  --muted:#5B7776;
+  --line:#CFE0DB;
+  --shadow:rgba(23,56,58,.24);
+  --orb-o:.55;
+
+  --face-ink:#3A2A12;
+
+  --display:"Baloo Bhaijaan 2","Tajawal","Segoe UI",Tahoma,sans-serif;
+  --body:"Tajawal","Segoe UI",Tahoma,sans-serif;
+
+  --c-happy:#F2B01E;
+  --c-love:#F0577F;
+  --c-sad:#4C8BE0;
+  --c-shy:#C77DDB;
+  --c-cry:#3FA7D6;
+  --c-angry:#E5533D;
+  --c-surprised:#2FB38A;
+  --c-scared:#7E86C9;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0C1A1B; --surface:#172B2B; --ink:#E8F4F0; --muted:#9DB8B4; --line:#284342;
+    --shadow:rgba(0,0,0,.55); --orb-o:.3;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0C1A1B; --surface:#172B2B; --ink:#E8F4F0; --muted:#9DB8B4; --line:#284342;
+  --shadow:rgba(0,0,0,.55); --orb-o:.3;
+  color-scheme:dark;
+}
+
+html,body{height:100%}
+body{
+  background-color:var(--bg);
+  background-image:
+    radial-gradient(900px 520px at 90% -8%,color-mix(in srgb,var(--c-love) 20%,transparent),transparent 70%),
+    radial-gradient(800px 520px at 0% 100%,color-mix(in srgb,var(--c-cry) 22%,transparent),transparent 70%);
+  color:var(--ink);
+  font-family:var(--body);
+  font-size:16px;
+  line-height:1.6;
+  direction:rtl;
+  overflow-x:hidden;overflow-y:auto;box-sizing:border-box;
+  padding-block:clamp(10px,2vh,24px);
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+}
+
+/* floating 3D orbs */
+.orbs{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0}
+.orbs i{
+  position:absolute;width:var(--s);height:var(--s);left:var(--x);top:var(--y);border-radius:50%;
+  background:radial-gradient(circle at 32% 28%,#fff 0,color-mix(in srgb,var(--o) 65%,#fff) 20%,var(--o) 58%,color-mix(in srgb,var(--o) 65%,#000) 100%);
+  opacity:var(--orb-o);
+  animation:drift 12s ease-in-out infinite alternate;animation-delay:var(--dl);
+}
+.wrap{position:relative;z-index:1;max-width:1180px;margin-inline:auto;height:100%;display:flex;flex-direction:column}
+
+header{text-align:center;flex:none}
+h1{
+  font-family:var(--display);font-weight:800;
+  font-size:clamp(1.7rem,min(7.5vw,7vh),4.2rem);line-height:1.2;margin:0;text-wrap:balance;
+}
+.w{
+  display:inline-block;color:var(--w);
+  --d:color-mix(in srgb,var(--w) 55%,#000);
+  text-shadow:0 1px 0 var(--d),0 2px 0 var(--d),0 3px 0 var(--d),0 4px 0 var(--d),0 5px 0 var(--d),0 6px 0 var(--d),0 16px 16px var(--shadow);
+}
+.sub{margin:4px 0 0;color:var(--muted);font-size:clamp(.95rem,min(2.6vw,2.4vh),1.3rem)}
+
+/* stage */
+.stage{
+  --c:#7FA39E;
+  position:relative;
+  display:flex;align-items:center;gap:clamp(16px,4vw,44px);
+  flex:none;
+  margin-block:clamp(10px,2.4vh,26px) clamp(16px,3vh,32px);
+  padding:clamp(8px,2vh,22px) clamp(16px,4vw,44px);
+  border-radius:38px;
+  background:var(--surface);
+  background:linear-gradient(160deg,color-mix(in srgb,var(--c) 8%,var(--surface)),color-mix(in srgb,var(--c) 30%,var(--surface)));
+  box-shadow:inset 0 4px 0 rgba(255,255,255,.55),0 10px 0 color-mix(in srgb,var(--c) 45%,var(--surface)),0 24px 32px var(--shadow);
+  transition:background .3s;
+}
+.stage .big{
+  flex:0 0 auto;width:clamp(90px,min(22vw,23vh),210px);
+  transform:perspective(700px) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));
+  transition:transform .15s ease-out;
+}
+.stage .big::after{
+  content:"";display:block;height:10px;width:70%;margin:6px auto 0;border-radius:50%;
+  background:radial-gradient(closest-side,var(--shadow),transparent);
+  animation:shadowbob 3.4s ease-in-out infinite;
+}
+.stage .txt{flex:1;min-width:0}
+.stage h2{font-family:var(--display);font-weight:800;font-size:clamp(1.4rem,min(5vw,5.2vh),3rem);line-height:1.25;margin:0;text-wrap:balance}
+.stage p{margin:4px 0 0;font-size:clamp(1rem,min(2.6vw,2.6vh),1.5rem);opacity:.88;text-wrap:balance}
+.burst{position:absolute;left:0;top:0;width:0;height:0;pointer-events:none;z-index:3}
+
+/* grid of faces */
+.grid{
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
+  grid-template-rows:repeat(2,minmax(0,1fr));
+  flex:1 1 0;min-height:240px;
+  gap:clamp(10px,2vh,22px) clamp(10px,2vw,22px);padding-bottom:10px;
+}
+.tile{
+  --c:var(--c-happy);
+  appearance:none;font:inherit;color:var(--ink);cursor:pointer;
+  border:0;border-radius:32px;min-width:0;
+  padding:clamp(12px,2.6vh,26px) 8px clamp(6px,1.2vh,12px);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(2px,.8vh,8px);
+  background:var(--surface);
+  background:linear-gradient(165deg,color-mix(in srgb,var(--c) 8%,var(--surface)),color-mix(in srgb,var(--c) 28%,var(--surface)));
+  box-shadow:inset 0 3px 0 rgba(255,255,255,.55),0 8px 0 color-mix(in srgb,var(--c) 50%,var(--surface)),0 18px 22px var(--shadow);
+  transition:transform .15s,box-shadow .15s;
+  -webkit-tap-highlight-color:transparent;
+}
+.tile:hover{
+  transform:translateY(-6px) rotate(-1.5deg);
+  box-shadow:inset 0 3px 0 rgba(255,255,255,.55),0 14px 0 color-mix(in srgb,var(--c) 50%,var(--surface)),0 26px 28px var(--shadow);
+}
+.tile:active{
+  transform:translateY(7px);
+  box-shadow:inset 0 3px 0 rgba(255,255,255,.55),0 1px 0 color-mix(in srgb,var(--c) 50%,var(--surface)),0 4px 8px var(--shadow);
+}
+.tile:focus-visible{outline:4px solid var(--ink);outline-offset:4px}
+.tile[aria-pressed="true"]{
+  box-shadow:0 0 0 5px var(--c),inset 0 3px 0 rgba(255,255,255,.55),0 8px 0 color-mix(in srgb,var(--c) 50%,var(--surface)),0 18px 22px var(--shadow);
+}
+.tile svg{flex:1 1 0;min-height:0;width:100%;max-width:170px;height:100%;filter:drop-shadow(0 7px 4px var(--shadow));animation:float 4.2s ease-in-out infinite;animation-delay:var(--i,0s)}
+.lab{font-family:var(--display);font-weight:700;flex:none;font-size:clamp(1rem,min(2.9vw,3.2vh),1.5rem);line-height:1.2}
+
+.by{flex:none;margin-top:clamp(8px,1.8vh,18px);text-align:center}
+.by span{
+  display:inline-block;padding:6px 26px;border-radius:99px;
+  font-family:var(--display);font-weight:700;font-size:clamp(1rem,min(2.8vw,2.8vh),1.5rem);
+  background:var(--surface);
+  background:linear-gradient(165deg,color-mix(in srgb,var(--c-cry) 8%,var(--surface)),color-mix(in srgb,var(--c-cry) 26%,var(--surface)));
+  box-shadow:inset 0 3px 0 rgba(255,255,255,.55),0 6px 0 color-mix(in srgb,var(--c-cry) 42%,var(--surface)),0 16px 22px var(--shadow);
+}
+
+@media (max-width:560px){
+  .grid{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(4,minmax(0,1fr));min-height:460px}
+  .stage{flex-direction:column;text-align:center}
+}
+
+/* faces */
+.face-svg{overflow:visible;display:block;--loop:var(--k,2);--once:1}
+.stage .face-svg{--loop:infinite;--once:infinite;animation:float 3.4s ease-in-out infinite}
+.base{stroke-width:2.5}
+.ln{fill:none;stroke:var(--face-ink);stroke-width:4.5;stroke-linecap:round;stroke-linejoin:round}
+.sol{fill:var(--face-ink);stroke:var(--face-ink);stroke-width:3;stroke-linejoin:round}
+.fi{fill:var(--face-ink)}
+.ew{fill:#fff;stroke:var(--face-ink);stroke-width:3}
+.blush{fill:#FF6F88;opacity:.55}
+.puff{fill:var(--muted);opacity:0}
+.fh,.drop,.spark,.shiver{opacity:0}
+.spark,.shiver{fill:none}
+.shiver{stroke:var(--muted);stroke-width:3;stroke-linecap:round}
+
+.fg{transform-box:view-box;transform-origin:50px 50px}
+.mouth{transform-box:fill-box;transform-origin:50% 0}
+.e-surprised .mouth{transform-origin:center}
+.he,.fh,.ewg,.brow,.tear,.puff,.eye,.sweat,.eyes,.blush,.drop,.spark,.shiver{transform-box:fill-box;transform-origin:center}
+.spark{transform-origin:50% 100%}
+.stream{transform-box:fill-box;transform-origin:50% 0}
+
+.e-happy{--k:3}.e-love{--k:2}.e-sad{--k:2}.e-shy{--k:2}
+.e-cry{--k:5}.e-angry{--k:3}.e-surprised{--k:3}.e-scared{--k:18}
+
+.go .fh{animation:rise 1.6s ease-out var(--loop) var(--d)}
+.go.e-happy .fg{animation:hop .7s ease-in-out var(--loop)}
+.go.e-happy .mouth{animation:talk .3s ease-in-out var(--loop) alternate}
+.go.e-love .he{animation:beat .8s ease-in-out var(--loop)}
+.go.e-sad .fg{animation:droop 1.6s ease-in-out var(--loop)}
+.go.e-sad .tear{animation:drip 1.2s ease-in var(--loop)}
+.go.e-sad .drop{animation:fall 1s ease-in var(--loop) var(--d)}
+.go.e-shy .fg{animation:tilt 1.6s ease-in-out var(--loop)}
+.go.e-shy .eyes{animation:glance 1.6s ease-in-out var(--loop)}
+.go.e-shy .blush{animation:glow 1.6s ease-in-out var(--loop)}
+.go.e-cry .fg{animation:sob .5s ease-in-out var(--loop)}
+.go.e-cry .stream{animation:flow .6s ease-in-out var(--loop)}
+.go.e-cry .mouth{animation:wail .5s ease-in-out var(--loop)}
+.go.e-angry .fg{animation:shake .45s linear var(--loop)}
+.go.e-angry .puff{animation:puff .9s ease-out var(--loop) var(--d)}
+.go.e-surprised .fg{animation:pop .6s ease-in-out var(--loop)}
+.go.e-surprised .ewg{animation:eyewide .6s ease-in-out var(--loop)}
+.go.e-surprised .brow{animation:brow .6s ease-in-out var(--loop)}
+.go.e-surprised .mouth{animation:mop .6s ease-in-out var(--loop)}
+.go.e-surprised .spark{animation:flash .6s ease-out var(--loop)}
+.go.e-scared .fg{animation:tremble .09s linear var(--loop)}
+.go.e-scared .sweat{animation:drip 1.2s ease-in var(--once)}
+.go.e-scared .shiver{animation:flick .18s linear var(--loop)}
+.e-neutral .eye{animation:blink 3.6s infinite}
+
+@keyframes float{50%{transform:translateY(-8px)}}
+@keyframes shadowbob{50%{transform:scale(.8);opacity:.7}}
+@keyframes drift{from{transform:translate(0,0)}to{transform:translate(22px,-34px)}}
+@keyframes hop{0%,100%{transform:translateY(0) scale(1,1)}30%{transform:translateY(-9px) scale(.97,1.04)}60%{transform:translateY(0) scale(1.05,.95)}}
+@keyframes talk{0%{transform:scaleY(1)}100%{transform:scaleY(.72)}}
+@keyframes beat{0%,100%{transform:scale(1)}25%{transform:scale(1.3)}50%{transform:scale(1.05)}70%{transform:scale(1.2)}}
+@keyframes rise{0%{transform:translate(0,6px) scale(.6);opacity:0}20%{opacity:.95}100%{transform:translate(var(--dx),-34px) scale(1.1);opacity:0}}
+@keyframes droop{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(4px) scale(1.02,.96)}}
+@keyframes drip{0%{transform:translateY(0);opacity:1}80%{opacity:1}100%{transform:translateY(24px);opacity:0}}
+@keyframes fall{0%{transform:translateY(0);opacity:0}20%{opacity:.95}100%{transform:translateY(22px);opacity:0}}
+@keyframes tilt{0%,100%{transform:rotate(0)}40%,60%{transform:rotate(-9deg)}}
+@keyframes glance{0%,100%{transform:translateX(0)}40%,60%{transform:translateX(5px)}}
+@keyframes glow{0%,100%{opacity:.55}50%{opacity:.95}}
+@keyframes sob{0%,100%{transform:translate(0,0)}25%{transform:translate(-2px,3px)}75%{transform:translate(2px,3px)}}
+@keyframes flow{0%,100%{transform:scaleY(.45)}50%{transform:scaleY(1)}}
+@keyframes wail{0%,100%{transform:scaleY(.8)}50%{transform:scaleY(1.08)}}
+@keyframes shake{0%,100%{transform:translateX(0) rotate(0)}20%{transform:translateX(-3px) rotate(-3deg)}40%{transform:translateX(3px) rotate(3deg)}60%{transform:translateX(-3px) rotate(-2deg)}80%{transform:translateX(3px) rotate(2deg)}}
+@keyframes puff{0%{transform:translateY(8px) scale(.5);opacity:0}30%{opacity:.8}100%{transform:translateY(-22px) scale(1.3);opacity:0}}
+@keyframes pop{0%,100%{transform:scale(1)}40%{transform:scale(1.14)}}
+@keyframes eyewide{0%,100%{transform:scale(1)}40%{transform:scale(1.18)}}
+@keyframes brow{0%,100%{transform:translateY(0)}40%{transform:translateY(-4px)}}
+@keyframes mop{0%,100%{transform:scale(1)}40%{transform:scale(1.2,1.25)}}
+@keyframes flash{0%{opacity:0;transform:scale(.4)}40%{opacity:1;transform:scale(1.1)}100%{opacity:0;transform:scale(1.25)}}
+@keyframes tremble{0%,100%{transform:translateX(0)}25%{transform:translateX(-1.8px)}75%{transform:translateX(1.8px)}}
+@keyframes flick{0%,100%{opacity:.9;transform:translateX(0)}50%{opacity:.3;transform:translateX(-1.5px)}}
+@keyframes blink{0%,92%,100%{transform:scaleY(1)}96%{transform:scaleY(.1)}}
+
+@media (prefers-reduced-motion:reduce){
+  *{animation:none !important;transition:none !important}
+}
+</style>
+
+<div class="orbs" aria-hidden="true">
+  <i style="--s:150px;--x:-30px;--y:12%;--o:var(--c-love);--dl:0s"></i>
+  <i style="--s:90px;--x:78%;--y:6%;--o:var(--c-happy);--dl:-3s"></i>
+  <i style="--s:210px;--x:84%;--y:46%;--o:var(--c-cry);--dl:-6s"></i>
+  <i style="--s:110px;--x:6%;--y:58%;--o:var(--c-surprised);--dl:-2s"></i>
+  <i style="--s:70px;--x:46%;--y:88%;--o:var(--c-shy);--dl:-8s"></i>
+  <i style="--s:130px;--x:68%;--y:84%;--o:var(--c-scared);--dl:-4s"></i>
+</div>
+
+<main class="wrap" dir="rtl" lang="ar">
+  <header>
+    <h1>
+      <span class="w" style="--w:var(--c-sad)">ما</span>
+      <span class="w" style="--w:var(--c-love)">مشاعرك</span>
+      <span class="w" style="--w:var(--c-surprised)">اليوم؟</span>
+    </h1>
+    <p class="sub">اضغط على الوجه الذي يشبه شعورك الآن</p>
+  </header>
+
+  <section class="stage" id="stage" aria-live="polite">
+    <div class="big" id="big"></div>
+    <div class="txt">
+      <h2 id="sTitle"></h2>
+      <p id="sAsk"></p>
+    </div>
+  </section>
+
+  <div class="grid" id="grid" role="group" aria-label="اختر شعورك"></div>
+
+  <footer class="by"><span>إعداد الدكتورة سارة شامان الحربي</span></footer>
+</main>
+
+<script>
+(function(){
+  var H = 'M0 7 C-13 -2 -9 -12 -4 -10.5 C-1.5 -9.7 0 -7.5 0 -6.5 C0 -7.5 1.5 -9.7 4 -10.5 C9 -12 13 -2 0 7 Z';
+  var STAR = 'M0 -8 L2.2 -2.2 L8 0 L2.2 2.2 L0 8 L-2.2 2.2 L-8 0 L-2.2 -2.2 Z';
+
+  function mix(a, b, t){
+    var pa = parseInt(a.slice(1), 16), pb = parseInt(b.slice(1), 16);
+    function ch(s){ return Math.round(((pa >> s) & 255) * (1 - t) + ((pb >> s) & 255) * t); }
+    return '#' + ((1 << 24) | (ch(16) << 16) | (ch(8) << 8) | ch(0)).toString(16).slice(1);
+  }
+  /* dark dot eye with a small glossy highlight */
+  function dot(cx, cy, r){
+    return '<circle class="fi" cx="'+cx+'" cy="'+cy+'" r="'+r+'"/>'+
+           '<circle cx="'+(cx - r*0.32)+'" cy="'+(cy - r*0.34)+'" r="'+(r*0.36)+'" fill="#fff"/>';
+  }
+
+  var EMO = [
+    { id:'happy', name:'سعيد', c:'var(--c-happy)', ff:'#FFCF48',
+      say:'أشعر بالسعادة', ask:'ما الشيء الجميل الذي حدث لك اليوم؟',
+      body:
+        '<ellipse class="blush" cx="21" cy="58" rx="7" ry="4.5"/><ellipse class="blush" cx="79" cy="58" rx="7" ry="4.5"/>'+
+        '<path class="ln" d="M27 45q8-11 16 0M57 45q8-11 16 0"/>'+
+        '<g class="mouth"><path class="sol" d="M28 58q22 28 44 0z"/><ellipse cx="50" cy="68" rx="8" ry="3.5" fill="#F0647A"/></g>',
+      extra:
+        '<g transform="translate(22 12) scale(.8)"><path class="fh" style="--dx:-14px;--d:0s" d="'+STAR+'" fill="#FFB300"/></g>'+
+        '<g transform="translate(52 0) scale(1)"><path class="fh" style="--dx:0px;--d:.25s" d="'+STAR+'" fill="#FFB300"/></g>'+
+        '<g transform="translate(80 12) scale(.8)"><path class="fh" style="--dx:14px;--d:.5s" d="'+STAR+'" fill="#FFB300"/></g>'
+    },
+    { id:'love', name:'أُحِبّ', c:'var(--c-love)', ff:'#FFCF48',
+      say:'أشعر بالحب', ask:'من الذي تحبه وتود أن تشكره اليوم؟',
+      body:
+        '<ellipse class="blush" cx="20" cy="60" rx="7" ry="4.5"/><ellipse class="blush" cx="80" cy="60" rx="7" ry="4.5"/>'+
+        '<g transform="translate(34 43) scale(1.25)"><path class="he" d="'+H+'" fill="#E8325A"/></g>'+
+        '<g transform="translate(66 43) scale(1.25)"><path class="he" d="'+H+'" fill="#E8325A"/></g>'+
+        '<path class="ln" d="M36 62q14 14 28 0"/>',
+      extra:
+        '<g transform="translate(24 14) scale(.7)"><path class="fh" style="--dx:-14px;--d:0s" d="'+H+'" fill="#F0577F"/></g>'+
+        '<g transform="translate(50 6) scale(.9)"><path class="fh" style="--dx:0px;--d:.25s" d="'+H+'" fill="#F0577F"/></g>'+
+        '<g transform="translate(78 14) scale(.7)"><path class="fh" style="--dx:14px;--d:.5s" d="'+H+'" fill="#F0577F"/></g>'
+    },
+    { id:'sad', name:'حزين', c:'var(--c-sad)', ff:'#FFCF48',
+      say:'أشعر بالحزن', ask:'لا بأس أن نحزن أحيانًا. هل تحب أن تخبرنا ما الذي أحزنك؟',
+      body:
+        '<path class="ln" style="stroke-width:4" d="M24 40L44 32M76 40L56 32"/>'+
+        dot(35,51,5)+dot(65,51,5)+
+        '<path class="ln" d="M33 74q17-16 34 0"/>'+
+        '<path class="tear" d="M35 58C31 64 30 67 35 70C40 67 39 64 35 58Z" fill="#6FB6F5"/>',
+      extra:
+        '<g><ellipse cx="36" cy="3" rx="15" ry="9" fill="#B5C6D8"/><ellipse cx="52" cy="-3" rx="17" ry="11" fill="#C9D7E6"/><ellipse cx="68" cy="4" rx="13" ry="8" fill="#B5C6D8"/><rect x="30" y="1" width="46" height="10" rx="5" fill="#B5C6D8"/></g>'+
+        '<path class="drop" style="--d:0s" d="M40 15C38 18 38 20 40 21C42 20 42 18 40 15Z" fill="#5AA8F0"/>'+
+        '<path class="drop" style="--d:.3s" d="M54 14C52 17 52 19 54 20C56 19 56 17 54 14Z" fill="#5AA8F0"/>'+
+        '<path class="drop" style="--d:.6s" d="M66 15C64 18 64 20 66 21C68 20 68 18 66 15Z" fill="#5AA8F0"/>'
+    },
+    { id:'shy', name:'خجول', c:'var(--c-shy)', ff:'#FFCF48',
+      say:'أشعر بالخجل', ask:'الخجل شعور طبيعي. ما الموقف الذي جعلك تخجل؟',
+      body:
+        '<ellipse class="blush" cx="24" cy="60" rx="10" ry="6.5"/><ellipse class="blush" cx="76" cy="60" rx="10" ry="6.5"/>'+
+        '<path class="ln" style="stroke:#E8506A;stroke-width:2" d="M17 59l4-4M22 61l4-4M27 63l4-4M73 63l4-4M78 61l4-4M83 59l4-4"/>'+
+        '<path class="ln" style="stroke-width:3.5" d="M26 38q7-4 14-1M60 37q7-3 14 1"/>'+
+        '<g class="eyes">'+dot(36,49,5)+dot(64,49,5)+'</g>'+
+        '<path class="ln" d="M41 69q9 6 18 0"/>'
+    },
+    { id:'cry', name:'أبكي', c:'var(--c-cry)', ff:'#FFCF48',
+      say:'أشعر برغبة في البكاء', ask:'البكاء يساعدنا أن نرتاح. من تحب أن يكون بجانبك الآن؟',
+      body:
+        '<rect class="stream" x="28" y="52" width="7" height="30" rx="3.5" fill="#6FC3FF"/>'+
+        '<rect class="stream" x="65" y="52" width="7" height="30" rx="3.5" fill="#6FC3FF"/>'+
+        '<path class="ln" d="M26 40l14 7-14 7M74 40l-14 7 14 7"/>'+
+        '<g class="mouth"><path class="sol" d="M34 64q16-8 32 0q-2 20-16 20q-14 0-16-20z"/><ellipse cx="50" cy="79" rx="8" ry="3.5" fill="#F0647A"/></g>'
+    },
+    { id:'angry', name:'غاضب', c:'var(--c-angry)', ff:'#FF8A5C', lo:'#E0552C', fe:'#C0441F',
+      say:'أشعر بالغضب', ask:'خذ نفسًا عميقًا. ما الذي أغضبك، وكيف نهدّئ أنفسنا معًا؟',
+      body:
+        '<path class="ln" style="stroke-width:5.5" d="M21 32L44 43M79 32L56 43"/>'+
+        dot(36,53,5.5)+dot(64,53,5.5)+
+        '<path class="ln" d="M34 74q16-13 32 0"/>',
+      extra:
+        '<circle class="puff" style="--d:0s" cx="20" cy="12" r="5"/>'+
+        '<circle class="puff" style="--d:.15s" cx="50" cy="4" r="5"/>'+
+        '<circle class="puff" style="--d:.3s" cx="80" cy="12" r="5"/>'
+    },
+    { id:'surprised', name:'متفاجئ', c:'var(--c-surprised)', ff:'#FFCF48',
+      say:'أشعر بالدهشة', ask:'ما الذي فاجأك اليوم؟',
+      body:
+        '<path class="ln brow" style="stroke-width:4" d="M24 29q10-9 20 0M56 29q10-9 20 0"/>'+
+        '<g class="ewg"><circle class="ew" cx="34" cy="46" r="10"/>'+dot(34,46,4.4)+'</g>'+
+        '<g class="ewg"><circle class="ew" cx="66" cy="46" r="10"/>'+dot(66,46,4.4)+'</g>'+
+        '<g class="mouth"><ellipse class="sol" cx="50" cy="73" rx="7.5" ry="10"/></g>',
+      extra:
+        '<path class="ln spark" style="stroke-width:3.5" d="M50 -2v-10M24 5l-7-8M76 5l7-8"/>'
+    },
+    { id:'scared', name:'خائف', c:'var(--c-scared)', ff:'#C9E8F2', lo:'#8DBBD0', fe:'#6FA6BC',
+      say:'أشعر بالخوف', ask:'أنت في أمان معنا. ما الذي يخيفك؟',
+      body:
+        '<path class="ln" style="stroke-width:4" d="M23 36L43 27M77 36L57 27"/>'+
+        '<circle class="ew" cx="34" cy="48" r="10"/>'+dot(34,50,3.4)+
+        '<circle class="ew" cx="66" cy="48" r="10"/>'+dot(66,50,3.4)+
+        '<path class="ln" style="stroke-width:4" d="M31 71q4.5-7 9 0t9 0t9 0t9 0"/>'+
+        '<path class="sweat" d="M82 22C78 28 77 31 82 34C87 31 86 28 82 22Z" fill="#6FB6F5"/>',
+      extra:
+        '<path class="shiver" d="M-2 34v14M-8 38v6M102 34v14M108 38v6"/>'
+    }
+  ];
+
+  var NEUTRAL = { id:'neutral', ff:'#FFCF48',
+    body:
+      '<g class="eye">'+dot(35,46,5)+'</g><g class="eye">'+dot(65,46,5)+'</g>'+
+      '<path class="ln" d="M38 68h24"/>'
+  };
+
+  function face(e){
+    var gid = 'gf-' + e.id;
+    var hi = mix(e.ff, '#FFFFFF', 0.6);
+    var lo = e.lo || '#E49A1E';
+    return '<svg class="face-svg e-'+e.id+'" viewBox="0 0 100 100" aria-hidden="true" focusable="false">'+
+      '<defs><radialGradient id="'+gid+'" cx="36%" cy="28%" r="78%">'+
+        '<stop offset="0" stop-color="'+hi+'"/><stop offset=".5" stop-color="'+e.ff+'"/><stop offset="1" stop-color="'+lo+'"/>'+
+      '</radialGradient></defs>'+
+      '<g class="fg">'+
+        '<circle class="base" cx="50" cy="50" r="46" fill="url(#'+gid+')" style="stroke:'+(e.fe || '#C98412')+'"/>'+
+        '<ellipse cx="34" cy="21" rx="16" ry="8" fill="#fff" opacity=".5" transform="rotate(-28 34 21)"/>'+
+        e.body+
+      '</g>'+(e.extra || '')+'</svg>';
+  }
+
+  function retrigger(el){
+    el.classList.remove('go');
+    void el.getBoundingClientRect();
+    el.classList.add('go');
+  }
+
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var stage = document.getElementById('stage');
+  var big = document.getElementById('big');
+  var sTitle = document.getElementById('sTitle');
+  var sAsk = document.getElementById('sAsk');
+  var grid = document.getElementById('grid');
+  var tiles = [];
+
+  function showNeutral(){
+    big.innerHTML = face(NEUTRAL);
+    sTitle.textContent = 'اختر وجهًا';
+    sAsk.textContent = 'اضغط على الوجه الذي يعبّر عن شعورك، وسنتحدث عنه معًا.';
+    stage.style.removeProperty('--c');
+  }
+
+  function burst(color){
+    if (reduce) return;
+    var layer = document.createElement('div');
+    layer.className = 'burst';
+    layer.style.left = (big.offsetLeft + big.offsetWidth / 2) + 'px';
+    layer.style.top = (big.offsetTop + big.offsetWidth / 2) + 'px';
+    stage.appendChild(layer);
+    var pal = [color, 'var(--c-happy)', 'var(--c-love)', 'var(--c-cry)', 'var(--c-surprised)', color];
+    for (var i = 0; i < 18; i++){
+      var p = document.createElement('i');
+      var size = 9 + Math.random() * 10;
+      p.style.cssText = 'position:absolute;left:0;top:0;width:'+size+'px;height:'+size+'px;border-radius:'+(Math.random() < .5 ? '50%' : '30%')+';background:'+pal[i % pal.length]+';box-shadow:inset -2px -3px 0 rgba(0,0,0,.18)';
+      layer.appendChild(p);
+      var a = Math.random() * Math.PI * 2;
+      var d = 90 + Math.random() * 110;
+      var dx = Math.cos(a) * d, dy = Math.sin(a) * d;
+      p.animate([
+        { transform:'translate(-50%,-50%) scale(.3) rotate(0deg)', opacity:1 },
+        { transform:'translate(calc(-50% + '+dx+'px),calc(-50% + '+dy+'px)) scale(1) rotate('+(Math.random()*360)+'deg)', opacity:0 }
+      ], { duration: 800 + Math.random() * 500, easing:'cubic-bezier(.2,.8,.3,1)', fill:'forwards' });
+    }
+    setTimeout(function(){ if (layer.parentNode) layer.parentNode.removeChild(layer); }, 1500);
+  }
+
+  function select(e, tile){
+    tiles.forEach(function(t){ t.setAttribute('aria-pressed', t === tile ? 'true' : 'false'); });
+    retrigger(tile.querySelector('svg'));
+    stage.style.setProperty('--c', e.c);
+    big.innerHTML = face(e);
+    retrigger(big.querySelector('svg'));
+    sTitle.textContent = e.say;
+    sAsk.textContent = e.ask;
+    burst(e.c);
+  }
+
+  EMO.forEach(function(e, idx){
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'tile';
+    b.style.setProperty('--c', e.c);
+    b.style.setProperty('--i', (-idx * 0.55) + 's');
+    b.setAttribute('aria-pressed', 'false');
+    b.setAttribute('aria-label', e.name);
+    b.innerHTML = face(e) + '<span class="lab">'+e.name+'</span>';
+    b.addEventListener('click', function(){ select(e, b); });
+    grid.appendChild(b);
+    tiles.push(b);
+  });
+
+  /* the big face leans toward the pointer */
+  if (!reduce){
+    stage.addEventListener('pointermove', function(ev){
+      var r = big.getBoundingClientRect();
+      var dx = (ev.clientX - (r.left + r.width / 2)) / Math.max(window.innerWidth / 2, 1);
+      var dy = (ev.clientY - (r.top + r.height / 2)) / Math.max(window.innerHeight / 2, 1);
+      dx = Math.max(-1, Math.min(1, dx)); dy = Math.max(-1, Math.min(1, dy));
+      big.style.setProperty('--ry', (dx * 18) + 'deg');
+      big.style.setProperty('--rx', (-dy * 14) + 'deg');
+    });
+    stage.addEventListener('pointerleave', function(){
+      big.style.setProperty('--ry', '0deg');
+      big.style.setProperty('--rx', '0deg');
+    });
+  }
+
+  showNeutral();
+})();
+</script>
+
+</body>
+</html>
